@@ -143,14 +143,14 @@ Web interface opening at http://localhost:8089
 
 ## 🆚 How LRGEX Compares
 
-| Feature             | LRGEX    | K6            | Locust        | JMeter        |
-| ------------------- | -------- | ------------- | ------------- | ------------- |
-| **Coding Required** | ❌ None  | ✅ JavaScript | ✅ Python     | ✅ Java/GUI   |
-| **Setup Time**      | 2-5 min  | 10-20 min     | 15-30 min     | 45-90 min     |
-| **Learning Curve**  | Minutes  | Hours-Days    | Hours-Days    | Days-Weeks    |
-| **Form Builder**    | ✅ Smart | ❌ Manual     | ❌ Manual     | ❌ Manual     |
-| **Page Discovery**  | ✅ Auto  | ❌ Manual     | ❌ Manual     | ❌ Manual     |
-| **Target User**     | Everyone | Developers    | Developers    | QA Engineers  |
+| Feature             | LRGEX    | K6            | Locust     | JMeter       |
+| ------------------- | -------- | ------------- | ---------- | ------------ |
+| **Coding Required** | ❌ None  | ✅ JavaScript | ✅ Python  | ✅ Java/GUI  |
+| **Setup Time**      | 2-5 min  | 10-20 min     | 15-30 min  | 45-90 min    |
+| **Learning Curve**  | Minutes  | Hours-Days    | Hours-Days | Days-Weeks   |
+| **Form Builder**    | ✅ Smart | ❌ Manual     | ❌ Manual  | ❌ Manual    |
+| **Page Discovery**  | ✅ Auto  | ❌ Manual     | ❌ Manual  | ❌ Manual    |
+| **Target User**     | Everyone | Developers    | Developers | QA Engineers |
 
 ## System Requirements
 

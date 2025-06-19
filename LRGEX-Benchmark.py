@@ -1351,17 +1351,29 @@ def check_and_install_dependencies():
         print("Syncing dependencies from pyproject.toml...")
         subprocess.run(["uv", "sync"], check=True, timeout=120)
         print("✅ Dependencies synced successfully!")
+        
+        # Give fresh systems a moment to initialize
+        time.sleep(2)
 
-        # Verify Locust is available
-        subprocess.run(
-            ["uv", "run", "--module", "locust", "--version"],
-            capture_output=True,
-            check=True,
-            timeout=10,
-        )
-        print("✅ Locust is ready!")
+        # Verify Locust is available - try a few times for fresh installations
+        for attempt in range(3):
+            try:
+                subprocess.run(
+                    ["uv", "run", "--module", "locust", "--version"],
+                    capture_output=True,
+                    check=True,
+                    timeout=15,
+                )
+                print("✅ Locust is ready!")
+                break
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                if attempt < 2:
+                    print("Initializing environment...")
+                    time.sleep(2)
+                else:
+                    raise
 
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
         # Fallback: Install Locust directly if sync fails
         print("Sync failed, installing Locust directly...")
         try:
@@ -1369,6 +1381,7 @@ def check_and_install_dependencies():
             print("✅ Locust installed successfully!")
         except Exception as e:
             print(f"❌ Failed to install Locust: {e}")
+            print("💡 Try running the script again - sometimes fresh environments need a restart.")
             sys.exit(1)
 
     print("✅ All dependencies ready!")
@@ -1443,22 +1456,21 @@ def main():
                 print("Results saved:")
                 print(f"   HTML Report: {config['html']}")
                 print(f"   CSV Data: {config['csv']}")
-                print("\nOpen the HTML file in your browser to see charts!")
-
-                # Show intelligent performance analysis
+                print("\nOpen the HTML file in your browser to see charts!")                # Show intelligent performance analysis
                 print("\n" + "=" * 50)
                 print("PERFORMANCE ANALYSIS")
                 print("=" * 50)
                 analyze_performance_and_advise()
         else:
             print("Test cancelled.")
-
+            
     except KeyboardInterrupt:
         print("\n\nTest stopped by user.")
         print("Any results generated have been saved.")
     except Exception as e:
         print(f"\nError: {e}")
-        print("Try running the script again or check your internet connection.")
+        print("💡 If this is a fresh Windows system, try running the script again.")
+        print("Fresh environments sometimes need a restart after dependency installation.")
         sys.exit(1)
 
 

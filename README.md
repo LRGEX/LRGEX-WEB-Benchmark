@@ -88,6 +88,16 @@ Ready-to-use scenarios for common testing needs:
    - Select Interactive or Automatic mode
    - Start testing!
 
+### Troubleshooting: Fresh Windows Systems
+
+Simply close the script and run it again - fresh environments sometimes need this on the first run:
+
+```bash
+python LRGEX-Benchmark.py
+```
+
+This is a known behavior on brand new Windows installations and typically only occurs once.
+
 4. **View results:**
    - Open `http://localhost:8089` for real-time control
    - Check `reports/` folder for detailed results

@@ -261,7 +261,8 @@ class SupportUser(HttpUser):
         """Read specific help article"""
         article_id = random.randint(1, 20)
         self.client.get(f"/help/article/{article_id}")
-      @task(1)
+    
+    @task(1)
     def contact_form(self):
         """Submit contact form with test data"""
         # First get the contact form page
@@ -1262,23 +1263,28 @@ def main():
     try:
         time.sleep(1)
         print("Launching systems...")
-        time.sleep(1)
-        # Check if locust is installed
+        time.sleep(1)  # Check if locust is installed
         try:
             subprocess.run(
                 ["uv", "run", "--module", "locust", "--version"],
                 capture_output=True,
                 check=True,
+                timeout=10,  # Add timeout to prevent hanging
             )
             print("")
             print("Loaded successfully!")
             print("")
+        except subprocess.TimeoutExpired:
+            print("Timeout checking Locust installation")
+            print("Installing Locust automatically...")
+            subprocess.run(["uv", "add", "locust"], check=True, timeout=60)
+            print("Locust installed successfully!")
         except (subprocess.CalledProcessError, FileNotFoundError):
             print("")
             print("Locust is not installed")
             print("")
             print("Installing Locust automatically...")
-            subprocess.run(["uv", "add", "locust"], check=True)
+            subprocess.run(["uv", "add", "locust"], check=True, timeout=60)
             print("Locust installed successfully!")  # Get user configuration
         config = get_user_input()
 
@@ -1306,9 +1312,7 @@ def main():
             print("• Duration (Advanced): For reference only - you must STOP manually!")
             print(
                 "\nIMPORTANT: The test will run indefinitely until you click 'STOP' in the web UI"
-            )
-
-            # Show performance analysis guidance
+            )  # Show performance analysis guidance
             analyze_performance_and_advise()
 
             confirm = input("\nReady to start? (Y/n): ").strip().lower()
@@ -1319,8 +1323,17 @@ def main():
             if not config["headless"]:
                 print("Browser will open shortly...")
                 print("Go to http://localhost:8089 if it doesn't open automatically")
-            print("Press Ctrl+C to stop the test anytime\n")  # Run the command
-            subprocess.run(cmd)
+            print("Press Ctrl+C to stop the test anytime\n")
+
+            # Run the command with proper error handling
+            try:
+                result = subprocess.run(cmd, check=False)
+                if result.returncode != 0 and not config["headless"]:
+                    print(f"\nWarning: Locust exited with code {result.returncode}")
+            except Exception as e:
+                print(f"\nError running Locust: {e}")
+                print("Make sure Locust is properly installed with: uv add locust")
+                return
 
             if config["headless"]:
                 print("\n" + "=" * 50)

@@ -1303,6 +1303,16 @@ def install_uv_if_missing():
                     "irm https://astral.sh/uv/install.ps1 | iex",
                 ]
                 subprocess.run(cmd, check=True, timeout=120)
+
+                # On Windows, update the PATH for this session
+                import os
+
+                uv_path = os.path.expanduser("~/.local/bin")
+                if uv_path not in os.environ.get("PATH", ""):
+                    os.environ["PATH"] = (
+                        uv_path + os.pathsep + os.environ.get("PATH", "")
+                    )
+
             else:
                 # Unix-like systems (Linux, macOS)
                 print("Installing UV for Unix-like system...")
@@ -1311,12 +1321,36 @@ def install_uv_if_missing():
 
             print("✅ UV installed successfully!")
 
-            # Verify installation
-            subprocess.run(
-                ["uv", "--version"], capture_output=True, check=True, timeout=10
-            )
-            print("✅ UV installation verified!")
-            return True
+            # Give a moment for installation to complete
+            time.sleep(2)
+
+            # Verify installation with retry for fresh installs
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    subprocess.run(
+                        ["uv", "--version"], capture_output=True, check=True, timeout=15
+                    )
+                    print("✅ UV installation verified!")
+                    return True
+                except (
+                    subprocess.CalledProcessError,
+                    FileNotFoundError,
+                    subprocess.TimeoutExpired,
+                ):
+                    if attempt < max_retries - 1:
+                        print(
+                            f"Verification attempt {attempt + 1} - UV still initializing..."
+                        )
+                        time.sleep(3)
+                    else:
+                        # Final attempt failed
+                        print("✅ UV installed but needs shell restart!")
+                        print(
+                            "💡 Please restart your terminal/PowerShell and run the script again."
+                        )
+                        print("This is normal for fresh Windows installations.")
+                        return False
 
         except subprocess.TimeoutExpired:
             print("❌ UV installation timed out")
@@ -1351,7 +1385,7 @@ def check_and_install_dependencies():
         print("Syncing dependencies from pyproject.toml...")
         subprocess.run(["uv", "sync"], check=True, timeout=120)
         print("✅ Dependencies synced successfully!")
-        
+
         # Give fresh systems a moment to initialize
         time.sleep(2)
 
@@ -1373,7 +1407,11 @@ def check_and_install_dependencies():
                 else:
                     raise
 
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+    except (
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+        subprocess.TimeoutExpired,
+    ):
         # Fallback: Install Locust directly if sync fails
         print("Sync failed, installing Locust directly...")
         try:
@@ -1381,7 +1419,9 @@ def check_and_install_dependencies():
             print("✅ Locust installed successfully!")
         except Exception as e:
             print(f"❌ Failed to install Locust: {e}")
-            print("💡 Try running the script again - sometimes fresh environments need a restart.")
+            print(
+                "💡 Try running the script again - sometimes fresh environments need a restart."
+            )
             sys.exit(1)
 
     print("✅ All dependencies ready!")
@@ -1456,21 +1496,25 @@ def main():
                 print("Results saved:")
                 print(f"   HTML Report: {config['html']}")
                 print(f"   CSV Data: {config['csv']}")
-                print("\nOpen the HTML file in your browser to see charts!")                # Show intelligent performance analysis
+                print(
+                    "\nOpen the HTML file in your browser to see charts!"
+                )  # Show intelligent performance analysis
                 print("\n" + "=" * 50)
                 print("PERFORMANCE ANALYSIS")
                 print("=" * 50)
                 analyze_performance_and_advise()
         else:
             print("Test cancelled.")
-            
+
     except KeyboardInterrupt:
         print("\n\nTest stopped by user.")
         print("Any results generated have been saved.")
     except Exception as e:
         print(f"\nError: {e}")
         print("💡 If this is a fresh Windows system, try running the script again.")
-        print("Fresh environments sometimes need a restart after dependency installation.")
+        print(
+            "Fresh environments sometimes need a restart after dependency installation."
+        )
         sys.exit(1)
 
 

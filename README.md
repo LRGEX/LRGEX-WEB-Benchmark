@@ -90,13 +90,21 @@ Ready-to-use scenarios for common testing needs:
 
 ### Troubleshooting: Fresh Windows Systems
 
-Simply close the script and run it again - fresh environments sometimes need this on the first run:
+If the script installs UV successfully but then says "Cannot proceed without UV":
 
-```bash
-python LRGEX-Benchmark.py
-```
+1. **Restart your PowerShell/Terminal** and run the script again:
 
-This is a known behavior on brand new Windows installations and typically only occurs once.
+   ```bash
+   python LRGEX-Benchmark.py
+   ```
+
+2. **Or manually update PATH** in your current session:
+   ```powershell
+   $env:Path = "$env:USERPROFILE\.local\bin;$env:Path"
+   python LRGEX-Benchmark.py
+   ```
+
+This happens because UV installs correctly but isn't immediately available in the current shell session. This is normal for fresh Windows installations and only occurs once.
 
 4. **View results:**
    - Open `http://localhost:8089` for real-time control

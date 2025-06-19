@@ -61,16 +61,15 @@ The Web Benchmarking tool simulates multiple users accessing your website simult
 ### Prerequisites
 
 - Python 3.8 or higher
-- UV package manager (will be installed automatically if missing)
 
-### Quick Start
+### How to Run
 
 1. Download the `LRGEX-Benchmark.py` script
 2. Open a terminal/command prompt
 3. Navigate to the script directory
 4. Run: `python LRGEX-Benchmark.py`
 
-The script will automatically install all required dependencies.
+**That's it!** The script automatically installs everything it needs.
 
 ## How to Use
 

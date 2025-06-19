@@ -1258,34 +1258,117 @@ def analyze_performance_and_advise():
     print("=" * 70)
 
 
+def install_uv_if_missing():
+    """Check if UV is installed, and install it automatically if missing"""
+    try:
+        # Try to run UV to see if it's installed
+        subprocess.run(["uv", "--version"], capture_output=True, check=True, timeout=10)
+        print("UV is already installed!")
+        return True
+    except (
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+        subprocess.TimeoutExpired,
+    ):
+        print("UV package manager not found. Installing UV automatically...")
+
+        try:
+            # Detect platform and install UV accordingly
+            if sys.platform.startswith("win"):
+                # Windows installation using PowerShell
+                print("Installing UV for Windows...")
+                cmd = [
+                    "powershell",
+                    "-ExecutionPolicy",
+                    "ByPass",
+                    "-Command",
+                    "irm https://astral.sh/uv/install.ps1 | iex",
+                ]
+                subprocess.run(cmd, check=True, timeout=120)
+            else:
+                # Unix-like systems (Linux, macOS)
+                print("Installing UV for Unix-like system...")
+                cmd = ["curl", "-LsSf", "https://astral.sh/uv/install.sh", "|", "sh"]
+                subprocess.run(" ".join(cmd), shell=True, check=True, timeout=120)
+
+            print("✅ UV installed successfully!")
+
+            # Verify installation
+            subprocess.run(
+                ["uv", "--version"], capture_output=True, check=True, timeout=10
+            )
+            print("✅ UV installation verified!")
+            return True
+
+        except subprocess.TimeoutExpired:
+            print("❌ UV installation timed out")
+            print(
+                "Please install UV manually from: https://docs.astral.sh/uv/getting-started/installation/"
+            )
+            return False
+        except Exception as e:
+            print(f"❌ Failed to install UV automatically: {e}")
+            print("Please install UV manually:")
+            if sys.platform.startswith("win"):
+                print(
+                    '  PowerShell: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"'
+                )
+            else:
+                print("  Unix/Linux: curl -LsSf https://astral.sh/uv/install.sh | sh")
+            print("Or visit: https://docs.astral.sh/uv/getting-started/installation/")
+            return False
+
+
+def check_and_install_dependencies():
+    """Smart dependency installer - installs UV first, then syncs dependencies"""
+    print("Checking dependencies...")
+
+    # Step 1: Install UV if missing
+    if not install_uv_if_missing():
+        print("❌ Cannot proceed without UV. Please install it manually and try again.")
+        sys.exit(1)
+
+    # Step 2: Try to sync dependencies from pyproject.toml first
+    try:
+        print("Syncing dependencies from pyproject.toml...")
+        subprocess.run(["uv", "sync"], check=True, timeout=120)
+        print("✅ Dependencies synced successfully!")
+
+        # Verify Locust is available
+        subprocess.run(
+            ["uv", "run", "--module", "locust", "--version"],
+            capture_output=True,
+            check=True,
+            timeout=10,
+        )
+        print("✅ Locust is ready!")
+
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Fallback: Install Locust directly if sync fails
+        print("Sync failed, installing Locust directly...")
+        try:
+            subprocess.run(["uv", "add", "locust"], check=True, timeout=60)
+            print("✅ Locust installed successfully!")
+        except Exception as e:
+            print(f"❌ Failed to install Locust: {e}")
+            sys.exit(1)
+
+    print("✅ All dependencies ready!")
+
+
 def main():
     """Main function to run the smart benchmark"""
     try:
         time.sleep(1)
         print("Launching systems...")
-        time.sleep(1)  # Check if locust is installed
-        try:
-            subprocess.run(
-                ["uv", "run", "--module", "locust", "--version"],
-                capture_output=True,
-                check=True,
-                timeout=10,  # Add timeout to prevent hanging
-            )
-            print("")
-            print("Loaded successfully!")
-            print("")
-        except subprocess.TimeoutExpired:
-            print("Timeout checking Locust installation")
-            print("Installing Locust automatically...")
-            subprocess.run(["uv", "add", "locust"], check=True, timeout=60)
-            print("Locust installed successfully!")
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            print("")
-            print("Locust is not installed")
-            print("")
-            print("Installing Locust automatically...")
-            subprocess.run(["uv", "add", "locust"], check=True, timeout=60)
-            print("Locust installed successfully!")  # Get user configuration
+        time.sleep(1)
+
+        # Smart dependency installation
+        check_and_install_dependencies()
+
+        print("")
+        print("Loaded successfully!")
+        print("")
         config = get_user_input()
 
         # Create test file automatically and get the path

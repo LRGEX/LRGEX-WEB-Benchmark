@@ -175,6 +175,7 @@ LRGEX-Web-Benchmark/
 ├── LRGEX-Benchmark.py          # Main application
 ├── pyproject.toml              # Dependencies
 ├── uv.lock                     # Lock file
+├── .venv/                      # Virtual environment (created automatically)
 ├── tests/                      # Generated test files
 ├── reports/                    # Test results
 ├── README.md                   # This file

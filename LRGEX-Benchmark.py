@@ -1372,7 +1372,7 @@ def install_uv_if_missing():
 
 
 def check_and_install_dependencies():
-    """Smart dependency installer - installs UV first, then syncs dependencies"""
+    """Smart dependency installer - creates venv first, then installs dependencies"""
     print("Checking dependencies...")
 
     # Step 1: Install UV if missing
@@ -1380,11 +1380,22 @@ def check_and_install_dependencies():
         print("❌ Cannot proceed without UV. Please install it manually and try again.")
         sys.exit(1)
 
-    # Step 2: Try to sync dependencies from pyproject.toml first
+    # Step 2: Create virtual environment if it doesn't exist
+    venv_path = Path(".venv")
+    if not venv_path.exists():
+        try:
+            print("Creating virtual environment...")
+            subprocess.run(["uv", "venv"], check=True, timeout=60)
+            print("✅ Virtual environment created!")
+        except Exception as e:
+            print(f"❌ Failed to create virtual environment: {e}")
+            # Continue anyway, UV might handle it
+
+    # Step 3: Try to sync dependencies from pyproject.toml
     try:
-        print("Syncing dependencies from pyproject.toml...")
+        print("Installing dependencies in virtual environment...")
         subprocess.run(["uv", "sync"], check=True, timeout=120)
-        print("✅ Dependencies synced successfully!")
+        print("✅ Dependencies installed successfully!")
 
         # Give fresh systems a moment to initialize
         time.sleep(2)

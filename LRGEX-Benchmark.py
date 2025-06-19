@@ -1460,9 +1460,7 @@ def main():
         # Build command
         cmd = build_command(config)
         # Display summary
-        display_summary(config)
-
-        # Auto-confirm or ask
+        display_summary(config)        # Auto-confirm or ask
         if config["headless"]:
             print("\nStarting automatic test...")
             confirm = True
@@ -1477,8 +1475,7 @@ def main():
             print("• Duration (Advanced): For reference only - you must STOP manually!")
             print(
                 "\nIMPORTANT: The test will run indefinitely until you click 'STOP' in the web UI"
-            )  # Show performance analysis guidance
-            analyze_performance_and_advise()
+            )
 
             confirm = input("\nReady to start? (Y/n): ").strip().lower()
             confirm = confirm in ["", "y", "yes"]

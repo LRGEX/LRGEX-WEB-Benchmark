@@ -7,7 +7,7 @@
 </div>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](https://github.com/LRGEX/LRGEX-Web-Benchmark)
+[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](https://github.com/[YOUR-GITHUB-USERNAME]/LRGEX-Web-Benchmark)
 
 ## What is LRGEX Web Benchmark?
 
@@ -71,7 +71,7 @@ Ready-to-use scenarios for common testing needs:
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/LRGEX/LRGEX-Web-Benchmark.git
+   git clone https://github.com/[YOUR-GITHUB-USERNAME]/LRGEX-Web-Benchmark.git
    cd LRGEX-Web-Benchmark
    ```
 
@@ -143,14 +143,14 @@ Web interface opening at http://localhost:8089
 
 ## 🆚 How LRGEX Compares
 
-| Feature             | LRGEX    | K6            | Locust     | JMeter       |
-| ------------------- | -------- | ------------- | ---------- | ------------ |
-| **Coding Required** | ❌ None  | ✅ JavaScript | ✅ Python  | ✅ Java/GUI  |
-| **Setup Time**      | 2-5 min  | 30-60 min     | 30-60 min  | 60+ min      |
-| **Learning Curve**  | Minutes  | Days          | Days       | Weeks        |
-| **Form Builder**    | ✅ Smart | ❌ Manual     | ❌ Manual  | ❌ Manual    |
-| **Page Discovery**  | ✅ Auto  | ❌ Manual     | ❌ Manual  | ❌ Manual    |
-| **Target User**     | Everyone | Developers    | Developers | QA Engineers |
+| Feature             | LRGEX    | K6            | Locust        | JMeter        |
+| ------------------- | -------- | ------------- | ------------- | ------------- |
+| **Coding Required** | ❌ None  | ✅ JavaScript | ✅ Python     | ✅ Java/GUI   |
+| **Setup Time**      | 2-5 min  | 10-20 min     | 15-30 min     | 45-90 min     |
+| **Learning Curve**  | Minutes  | Hours-Days    | Hours-Days    | Days-Weeks    |
+| **Form Builder**    | ✅ Smart | ❌ Manual     | ❌ Manual     | ❌ Manual     |
+| **Page Discovery**  | ✅ Auto  | ❌ Manual     | ❌ Manual     | ❌ Manual     |
+| **Target User**     | Everyone | Developers    | Developers    | QA Engineers  |
 
 ## System Requirements
 
@@ -247,14 +247,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Ready to test your website's performance? Get started in under 5 minutes!**
 
 ```bash
-git clone https://github.com/LRGEX/LRGEX-Web-Benchmark.git
+git clone https://github.com/[YOUR-GITHUB-USERNAME]/LRGEX-Web-Benchmark.git
 cd LRGEX-Web-Benchmark
 python LRGEX-Benchmark.py
 ```
 
 ## Overview
 
-Web Benchmarking is a user-friendly load testing tool that helps you test the performance and reliability of web applications under various load conditions. Built on top of Locust, it provides an intuitive interface for both technical and non-technical users to conduct comprehensive performance testing.
+LRGEX Web Benchmark is a user-friendly load testing tool that helps you test the performance and reliability of web applications under various load conditions. Built on top of Locust, it provides an intuitive interface for both technical and non-technical users to conduct comprehensive performance testing.
 
 ## Key Features
 
@@ -267,7 +267,7 @@ Web Benchmarking is a user-friendly load testing tool that helps you test the pe
 
 ## What This Tool Monitors
 
-### ✅ What the Web Benchmarking Tool Tracks:
+### ✅ What LRGEX Web Benchmark Tracks:
 
 - **Response times** (how fast your website responds)
 - **Success/failure rates** (which requests work vs. fail)
@@ -292,7 +292,7 @@ Web Benchmarking is a user-friendly load testing tool that helps you test the pe
 
 ## What This Tool Does
 
-The Web Benchmarking tool simulates multiple users accessing your website simultaneously to:
+The LRGEX Web Benchmark tool simulates multiple users accessing your website simultaneously to:
 
 - **Test server capacity** under realistic load conditions
 - **Identify performance bottlenecks** before they affect real users
@@ -304,15 +304,14 @@ The Web Benchmarking tool simulates multiple users accessing your website simult
 
 ### Prerequisites
 
-- Python 3.10 or higher
-- git ( if you prefere to use, git clone https://github.com/LRGEX/LRGEX-WEB-Benchmark)
+- Python 3.8+ installed
+- git (optional, for cloning the repository)
 
 ### How to Run
 
-1. Download the `LRGEX-Benchmark.py` script or git clone https://github.com/LRGEX/LRGEX-WEB-Benchmark
-2. from CMD navigate to LRGEX-WEB-Benchmarkfolder
+1. Download the `LRGEX-Benchmark.py` script or clone the repository
+2. Navigate to the LRGEX-WEB-Benchmark folder in terminal/command prompt
 3. Run: `python LRGEX-Benchmark.py`
-4. when you see all dependancies installed message close the CMD and run the script again.
 
 **That's it!** The script automatically installs everything it needs.
 
@@ -476,14 +475,14 @@ project-directory/
     └── results.csv            # Raw data for analysis
 ```
 
-## Recent Changes (v2.5.3)
+## Recent Changes (v1.0.0)
 
 ### ✨ New Features
 
 - **Intelligent Performance Analysis**: Automatically analyzes your test results and provides specific recommendations based on actual response times and failure rates
-- **Professional Output**: Removed all emojis for clean, enterprise-ready reporting
+- **Professional Output**: Clean, enterprise-ready reporting
 - **Smart Form Builder**: Enhanced interactive form test generation with better field explanations
-- **Automatic Test Duration**: Fixed infinite test duration bug - tests now properly respect time limits in automatic mode
+- **Automatic Test Duration**: Tests properly respect time limits in automatic mode
 
 ### Improvements
 

@@ -14,8 +14,7 @@ TEST_TEMPLATES = {
         "description": "I'll ask you questions and build a custom form test for you!",
         "filename": "custom_form_test.py",
         "interactive": True,  # Special flag for interactive creation
-    },
-    "smart": {
+    },    "smart": {
         "name": "Smart Website Test",
         "description": "Automatically finds what exists and ONLY tests that",
         "filename": "smart_test.py",
@@ -23,13 +22,23 @@ TEST_TEMPLATES = {
 import random
 import time
 import os
+import threading
+import re
+from urllib.parse import urljoin
+
+# Global discovery state - shared across ALL users
+_discovery_lock = threading.Lock()
+_discovery_done = False
+_working_paths = set()
+_protected_paths = set()  # Pages that exist but require auth (401/403)
 
 class SmartWebsiteUser(HttpUser):
     wait_time = between(1, 3)
-    working_paths = set()
     
     def on_start(self):
-        """Find what actually exists on this website"""
+        """Find what actually exists on this website - but only once globally"""
+        global _discovery_done, _working_paths, _protected_paths, _discovery_lock
+        
         # Check if there's a duration limit set via environment variable
         if hasattr(self.environment, 'parsed_options') and hasattr(self.environment.parsed_options, 'run_time'):
             self.run_time = self.environment.parsed_options.run_time
@@ -37,45 +46,141 @@ class SmartWebsiteUser(HttpUser):
             self.run_time = None
         
         self.start_time = time.time()
-        
-        # Always test homepage first
-        self.working_paths.add("/")
-        
-        # Test common paths but ONLY keep ones that work
-        test_paths = [
-            "/about", "/contact", "/services", "/products",
-            "/help", "/support", "/blog", "/news", "/faq", 
-            "/login", "/api", "/search"
-        ]
-        
-        print("Discovering what exists on this website...")
-        for path in test_paths:
-            try:
-                # Silent test - don't count as requests in report
-                response = self.client.get(path, catch_response=True, name="discovery")
-                if response.status_code == 200:
-                    self.working_paths.add(path)
-                    print(f"Found: {path}")
-                response.success()  # Always mark discovery as success
-            except:
-                pass
-        
-        print(f"Will test {len(self.working_paths)} working pages")
-        
-        # If only homepage works, focus entirely on homepage
-        if len(self.working_paths) == 1:
-            print("Simple website detected - focusing on homepage performance")
+          # Only do discovery once across ALL users
+        with _discovery_lock:
+            if not _discovery_done:
+                print("Discovering what exists on this website...")
+                print("=" * 50)
+                
+                # Always test homepage first
+                _working_paths.add("/")
+                print("Found: / (homepage)")
+                
+                # Comprehensive path discovery - including more admin variations
+                test_paths = [
+                    # Standard pages
+                    "/about", "/about.html", "/about.php", "/about-us",
+                    "/contact", "/contact.html", "/contact.php", "/contact-us",
+                    "/services", "/products", "/shop", "/store",
+                    "/help", "/support", "/blog", "/news", "/faq", 
+                    "/login", "/signin", "/api", "/search",
+                    
+                    # Admin and management pages - comprehensive list
+                    "/admin", "/admin.html", "/admin.php", "/admin/", 
+                    "/administrator", "/administration", "/administrator.html",
+                    "/dashboard", "/dashboard.html", "/dashboard.php",
+                    "/panel", "/control", "/manage", "/manager",
+                    "/wp-admin", "/wp-admin/", "/wp-login.php",
+                    "/phpmyadmin", "/phpmyadmin/", "/pma",
+                    "/cpanel", "/webmail", "/plesk",
+                    "/admin-console", "/admin-panel", "/admin-login",
+                    "/backend", "/management", "/console",
+                    
+                    # Security and system pages
+                    "/login.html", "/login.php", "/signin.html",
+                    "/auth", "/authentication", "/secure",
+                    "/user", "/profile", "/account", "/settings",
+                    
+                    # Common additional pages
+                    "/docs", "/documentation", "/privacy", "/terms",
+                    "/sitemap", "/sitemap.xml", "/robots.txt",
+                    "/test", "/demo", "/example", "/sample"
+                ]
+                
+                # Try to find additional URLs from homepage links
+                try:
+                    homepage_response = self.client.get("/", catch_response=True, name="discovery")
+                    if homepage_response.status_code == 200:                        # Extract links from homepage HTML
+                        links1 = re.findall(r'href="([^"]+)"', homepage_response.text, re.IGNORECASE)
+                        links2 = re.findall(r"href='([^']+)'", homepage_response.text, re.IGNORECASE)
+                        links = links1 + links2
+                        for link in links:
+                            if link.startswith('/') and not link.startswith('//'):
+                                # Clean the link
+                                clean_link = link.split('#')[0].split('?')[0]
+                                if 1 < len(clean_link) < 100 and clean_link not in test_paths:
+                                    test_paths.append(clean_link)
+                    homepage_response.success()
+                except Exception:
+                    pass                
+                # Test all discovered paths - only show what we FIND
+                found_pages = []
+                for path in test_paths:
+                    try:
+                        # Silent test - don't count as requests in report
+                        response = self.client.get(path, catch_response=True, name="discovery")
+                        status = response.status_code
+                        
+                        if status == 200:
+                            _working_paths.add(path)
+                            found_pages.append(f"Found: {path} (accessible)")
+                        elif status in [301, 302]:
+                            _working_paths.add(path)
+                            found_pages.append(f"Found: {path} (redirects)")
+                        elif status in [401, 403]:
+                            _protected_paths.add(path)
+                            found_pages.append(f"Found: {path} (protected)")
+                        # Skip showing 404s and errors - nobody cares what doesn't exist!
+                        
+                        response.success()  # Always mark discovery as success
+                    except Exception:
+                        pass  # Silently ignore errors during discovery
+                
+                # Only show what we actually found
+                if found_pages:
+                    for page in found_pages:
+                        print(page)
+                else:
+                    print("Only homepage found - simple website detected")
+                
+                print("=" * 50)
+                total_found = len(_working_paths) + len(_protected_paths)
+                if total_found > 1:
+                    print(f"Discovery Results: Found {total_found} testable pages on this website")
+                else:
+                    print("Discovery Results: Simple website - focusing on homepage performance")
+                print("=" * 50)
+                
+                # Include protected pages in testing (they exist, just require auth)
+                all_testable = _working_paths.union(_protected_paths)
+                
+                if len(all_testable) == 1:
+                    print("Simple website detected - focusing on homepage performance")
+                else:
+                    print(f"Will test {len(all_testable)} pages that exist on this website")
+                
+                _discovery_done = True
     
     @task
     def visit_pages(self):
-        """Visit pages that actually exist"""
-        if len(self.working_paths) == 1:
+        """Visit pages that actually exist (including protected ones)"""
+        global _working_paths, _protected_paths
+        
+        # Combine accessible and protected pages (protected pages still generate useful load)
+        all_testable = _working_paths.union(_protected_paths)
+        
+        if len(all_testable) <= 1:
             # Only homepage exists - just test that
             self.client.get("/")
         else:
             # Multiple pages exist - test them all
-            path = random.choice(list(self.working_paths))
-            self.client.get(path)
+            path = random.choice(list(all_testable))
+            
+            # Test the page but handle expected auth responses
+            with self.client.get(path, catch_response=True) as response:
+                if response.status_code in [200, 301, 302, 401, 403]:
+                    # These are all "expected" responses for pages that exist
+                    response.success()
+                elif response.status_code == 404:
+                    # Page disappeared - remove from future testing
+                    if path in _working_paths:
+                        _working_paths.discard(path)
+                    if path in _protected_paths:
+                        _protected_paths.discard(path)
+                    response.failure("Page no longer exists")
+                else:
+                    # Server errors or other issues
+                    response.failure(f"Unexpected status: {response.status_code}")
 ''',
     },
     "website": {

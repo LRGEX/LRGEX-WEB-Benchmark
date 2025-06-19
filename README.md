@@ -1,12 +1,246 @@
 <div align="center">
   <img src="https://download.lrgex.com/Dark%20Full%20Logo.png" alt="LRGEX Logo" width="300">
   
-  # Web Benchmarking v2.5.3
+  # Web Benchmark
   
-  *Professional Load Testing Tool for Web Applications*
+  **Smart web performance testing with interactive setup - no coding required**
 </div>
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](https://github.com/LRGEX/LRGEX-Web-Benchmark)
+
+## What is LRGEX Web Benchmark?
+
+LRGEX Web Benchmark is **the first question-based load testing tool** that creates custom tests through interactive conversations - no coding experience required! Just answer simple questions about your website and get professional-grade performance testing results.
+
+### **Why Choose LRGEX?**
+
+Unlike other load testing tools that require JavaScript, Python, or complex GUI knowledge, LRGEX uses an **intelligent question-based approach** to create perfect tests for your specific needs.
+
+## ✨ Key Features
+
+### 🧠 **Smart Form Builder**
+
+- Answer simple questions about your form
+- Automatically generates realistic test data
+- Handles complex form scenarios intelligently
+- **No coding required!**
+
+### **Zero Coding Required**
+
+- Question-based setup wizard
+- Interactive guided configuration
+- Works in under 5 minutes
+- Perfect for non-developers
+
+### 🔍 **Intelligent Page Discovery**
+
+- Automatically finds what exists on your website
+- Only tests working pages (no 404 errors!)
+- Smart adaptation to any website structure
+- Efficient testing with zero waste
+
+### **Interactive Web Interface**
+
+- Professional browser-based control
+- Real-time performance monitoring
+- Live charts and graphs
+- Manual start/stop control
+
+### **7 Pre-built Test Templates**
+
+Ready-to-use scenarios for common testing needs:
+
+1. **Smart Form Builder** - Custom form testing with guided setup
+2. **Smart Website Test** - Intelligent page discovery and testing
+3. **Website Load Test** - Homepage and link discovery testing
+4. **API Load Test** - REST endpoint performance testing
+5. **E-commerce Test** - Shopping cart and checkout simulation
+6. **Support Portal Test** - Help desk and support feature testing
+7. **Form Submission Test** - Multiple form type testing
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.8+ installed
+- Internet connection
+
+### Installation & Usage
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/LRGEX/LRGEX-Web-Benchmark.git
+   cd LRGEX-Web-Benchmark
+   ```
+
+2. **Run LRGEX:**
+
+   ```bash
+   python LRGEX-Benchmark.py
+   ```
+
+3. **Follow the interactive setup:**
+
+   - Choose your test type (1-7)
+   - Answer simple questions about your website
+   - Select Interactive or Automatic mode
+   - Start testing!
+
+4. **View results:**
+   - Open `http://localhost:8089` for real-time control
+   - Check `reports/` folder for detailed results
+
+## Example: Smart Form Builder
+
+```
+Select test type (1-7): 1
+Enter your website URL: https://mysite.com
+Form page: /contact
+Submit URL: /submit-contact
+Number of fields: 3
+
+Field 1 name: name
+Data type: Person's name (3)
+
+Field 2 name: email
+Data type: Email address (4)
+
+Field 3 name: message
+Data type: Text message (6)
+
+✅ Custom test created!
+Web interface opening at http://localhost:8089
+```
+
+## What You Get
+
+### **Professional Reports**
+
+- **HTML Report** - Beautiful charts and graphs
+- **CSV Data** - Raw performance metrics
+- **Real-time Monitoring** - Live performance dashboard
+- **Error Analysis** - Detailed failure insights
+
+### **Key Metrics**
+
+- Response times (min/max/average)
+- Requests per second
+- Failure rates
+- Concurrent user handling
+- Performance bottlenecks
+
+## 🆚 How LRGEX Compares
+
+| Feature             | LRGEX    | K6            | Locust     | JMeter       |
+| ------------------- | -------- | ------------- | ---------- | ------------ |
+| **Coding Required** | ❌ None  | ✅ JavaScript | ✅ Python  | ✅ Java/GUI  |
+| **Setup Time**      | 2-5 min  | 30-60 min     | 30-60 min  | 60+ min      |
+| **Learning Curve**  | Minutes  | Days          | Days       | Weeks        |
+| **Form Builder**    | ✅ Smart | ❌ Manual     | ❌ Manual  | ❌ Manual    |
+| **Page Discovery**  | ✅ Auto  | ❌ Manual     | ❌ Manual  | ❌ Manual    |
+| **Target User**     | Everyone | Developers    | Developers | QA Engineers |
+
+## System Requirements
+
+- **Operating System:** Windows, macOS, Linux
+- **Python:** 3.8 or higher
+- **Memory:** 2GB RAM minimum
+- **Disk Space:** 100MB for installation
+- **Network:** Internet connection for dependencies
+
+## 📁 Project Structure
+
+```
+LRGEX-Web-Benchmark/
+├── LRGEX-Benchmark.py          # Main application
+├── pyproject.toml              # Dependencies
+├── uv.lock                     # Lock file
+├── tests/                      # Generated test files
+├── reports/                    # Test results
+├── README.md                   # This file
+├── LICENSE                     # MIT License
+└── CHANGELOG.md                # Version history
+```
+
+## Advanced Usage
+
+### **Interactive Mode**
+
+- Full browser control at `http://localhost:8089`
+- Set any number of users
+- Control spawn rate dynamically
+- Manual start/stop
+- Real-time metric adjustments
+
+### **Automatic Mode**
+
+- Preset configurations for quick testing
+- Light, Medium, Heavy, Extreme intensity levels
+- Automatic report generation
+- Perfect for CI/CD integration
+
+## 🐛 Issues & Support
+
+We welcome **bug reports** and **feature suggestions**!
+
+**Please note:** We currently accept **issues only** (bug reports and feature requests). Pull requests for code changes are not accepted at this time as we maintain direct control over the codebase.
+
+### **How to Report Issues:**
+
+1. Check existing issues first
+2. Create a new issue with:
+   - Clear description of the problem
+   - Steps to reproduce
+   - Your system information
+   - Expected vs actual behavior
+
+### **Feature Requests:**
+
+1. Describe the feature clearly
+2. Explain the use case
+3. Suggest how it might work
+
+## 👥 Authors
+
+**LRGEX Team:**
+
+- **Hesham M Alahdal** - lrg@lrgex.com
+- **Nidhal A Brniyah** - n1a1b1@lrgex.com
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Why LRGEX?
+
+**LRGEX Web Benchmark is like "Wix for Load Testing"** - it democratizes professional performance testing for everyone, not just developers!
+
+### **Perfect For:**
+
+- ✅ **Students** learning about web performance
+- ✅ **Business owners** testing their websites
+- ✅ **Developers** who want quick results
+- ✅ **QA teams** needing accessible tools
+- ✅ **Anyone** curious about website performance
+
+### **Unique Value:**
+
+- **Zero technical barriers** - anyone can use it
+- **Professional results** - enterprise-grade testing
+- **Instant gratification** - working in minutes
+- **Smart automation** - handles complexity for you
+
 ---
+
+**Ready to test your website's performance? Get started in under 5 minutes!**
+
+```bash
+git clone https://github.com/LRGEX/LRGEX-Web-Benchmark.git
+cd LRGEX-Web-Benchmark
+python LRGEX-Benchmark.py
+```
 
 ## Overview
 
@@ -60,14 +294,15 @@ The Web Benchmarking tool simulates multiple users accessing your website simult
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
+- git ( if you prefere to use, git clone https://github.com/LRGEX/LRGEX-WEB-Benchmark)
 
 ### How to Run
 
-1. Download the `LRGEX-Benchmark.py` script
-2. Open a terminal/command prompt
-3. Navigate to the script directory
-4. Run: `python LRGEX-Benchmark.py`
+1. Download the `LRGEX-Benchmark.py` script or git clone https://github.com/LRGEX/LRGEX-WEB-Benchmark
+2. from CMD navigate to LRGEX-WEB-Benchmarkfolder
+3. Run: `python LRGEX-Benchmark.py`
+4. when you see all dependancies installed message close the CMD and run the script again.
 
 **That's it!** The script automatically installs everything it needs.
 
@@ -168,7 +403,7 @@ GET     /admin.html    15933       0        90          390         696
 
 ## Legal and Ethical Considerations
 
-### ⚠️ Important Warning
+### Important Warning
 
 **Only test websites you own or have explicit written permission to test.**
 
@@ -240,7 +475,7 @@ project-directory/
 - **Smart Form Builder**: Enhanced interactive form test generation with better field explanations
 - **Automatic Test Duration**: Fixed infinite test duration bug - tests now properly respect time limits in automatic mode
 
-### 🔧 Improvements
+### Improvements
 
 - **Better File Organization**: All test files automatically saved to `tests/` directory
 - **Enhanced User Guidance**: Clearer explanations for non-programmers throughout the interface

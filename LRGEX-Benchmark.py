@@ -599,6 +599,22 @@ def build_custom_form_test(existing_host=None):
     return {"code": test_code, "form_info": form_info}
 
 
+def sanitize_field_name_for_function(field_name):
+    """Convert field name to valid Python function name"""
+    # Replace spaces and special characters with underscores
+    import re
+
+    sanitized = re.sub(r"[^a-zA-Z0-9]", "_", field_name.lower())
+    # Remove multiple consecutive underscores
+    sanitized = re.sub(r"_+", "_", sanitized)
+    # Remove leading/trailing underscores
+    sanitized = sanitized.strip("_")
+    # Ensure it doesn't start with a number
+    if sanitized and sanitized[0].isdigit():
+        sanitized = "field_" + sanitized
+    return sanitized
+
+
 def generate_custom_form_code(form_info):
     """Generate Python code for the custom form test"""
 
@@ -609,27 +625,29 @@ def generate_custom_form_code(form_info):
     for field in form_info["fields"]:
         field_name = field["name"]
         field_type = field["type"]
+        # Create a safe function name
+        safe_function_name = sanitize_field_name_for_function(field_name)
 
         if field_type == 1:  # Student ID
             field_generators.append(
                 f"""
-    def generate_{field_name}(self):
+    def generate_{safe_function_name}(self):
         \"\"\"Generate fake {field_name} for testing\"\"\"
         return f"{{random.randint(10000, 99999)}}\""""
             )
             form_data_fields.append(
-                f'        "{field_name}": self.generate_{field_name}(),'
+                f'        "{field_name}": self.generate_{safe_function_name}(),'
             )
 
         elif field_type == 2:  # University ID
             field_generators.append(
                 f"""
-    def generate_{field_name}(self):
+    def generate_{safe_function_name}(self):
         \"\"\"Generate fake {field_name} for testing\"\"\"
         return f"UNI{{random.randint(10000, 99999)}}\""""
             )
             form_data_fields.append(
-                f'        "{field_name}": self.generate_{field_name}(),'
+                f'        "{field_name}": self.generate_{safe_function_name}(),'
             )
 
         elif field_type == 3:  # Name
@@ -645,12 +663,12 @@ def generate_custom_form_code(form_info):
         elif field_type == 5:  # Phone
             field_generators.append(
                 f"""
-    def generate_{field_name}(self):
+    def generate_{safe_function_name}(self):
         \"\"\"Generate fake {field_name} for testing\"\"\"
         return f"555-{{random.randint(100, 999)}}-{{random.randint(1000, 9999)}}\""""
             )
             form_data_fields.append(
-                f'        "{field_name}": self.generate_{field_name}(),'
+                f'        "{field_name}": self.generate_{safe_function_name}(),'
             )
 
         elif field_type == 6:  # Text message

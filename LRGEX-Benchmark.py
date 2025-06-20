@@ -100,16 +100,15 @@ class SmartWebsiteUser(HttpUser):
                                 clean_link = link.split('#')[0].split('?')[0]
                                 if 1 < len(clean_link) < 100 and clean_link not in test_paths:
                                     test_paths.append(clean_link)
-                    homepage_response.success()
-                except Exception:
-                    pass                
+                    homepage_response.success()                except Exception:
+                    pass
+                
                 # Test all discovered paths - only show what we FIND
                 found_pages = []
                 for path in test_paths:
                     try:
                         # Silent test - don't count as requests in report
-                        response = self.client.get(path, catch_response=True, name="discovery")
-                        status = response.status_code
+                        response = self.client.get(path, catch_response=True, name="discovery")                        status = response.status_code
                         
                         if status == 200:
                             _working_paths.add(path)

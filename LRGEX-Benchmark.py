@@ -14,7 +14,8 @@ TEST_TEMPLATES = {
         "description": "I'll ask you questions and build a custom form test for you!",
         "filename": "custom_form_test.py",
         "interactive": True,  # Special flag for interactive creation
-    },    "smart": {
+    },
+    "smart": {
         "name": "Smart Website Test",
         "description": "Automatically finds what exists and ONLY tests that",
         "filename": "smart_test.py",
@@ -100,15 +101,16 @@ class SmartWebsiteUser(HttpUser):
                                 clean_link = link.split('#')[0].split('?')[0]
                                 if 1 < len(clean_link) < 100 and clean_link not in test_paths:
                                     test_paths.append(clean_link)
-                    homepage_response.success()                except Exception:
-                    pass
-                
+                    homepage_response.success()
+                except Exception:
+                    pass                
                 # Test all discovered paths - only show what we FIND
                 found_pages = []
                 for path in test_paths:
                     try:
                         # Silent test - don't count as requests in report
-                        response = self.client.get(path, catch_response=True, name="discovery")                        status = response.status_code
+                        response = self.client.get(path, catch_response=True, name="discovery")
+                        status = response.status_code
                         
                         if status == 200:
                             _working_paths.add(path)
@@ -921,32 +923,36 @@ def get_user_input():
             else:
                 print("Please enter a valid option number")
         except ValueError:
-            print("Please enter a valid number")    # 3. Test mode FIRST - determines what settings we need
+            print(
+                "Please enter a valid number"
+            )  # 3. Test mode FIRST - determines what settings we need
     print("\nHow do you want to run the test?")
     print("  1. Interactive Mode - Open web interface (you control everything)")
     print("  2. Automatic Mode - Run with preset settings")
-    
+
     while True:
         mode = input("\nSelect mode (1-2): ").strip()
-        
+
         if mode == "1":
             config["headless"] = False
             print("Interactive mode - You'll control users/duration in browser")
             print(
                 "No intensity settings needed - you'll set everything in the web interface!"
             )
-            
+
             # Ask for maximum duration even in interactive mode to prevent infinite tests
             print("\nFor safety, what's the maximum time this test should run?")
             print("(The test will stop automatically after this time)")
             try:
-                max_duration = int(input("Maximum duration in minutes (e.g., 5, 10, 30): ").strip())
+                max_duration = int(
+                    input("Maximum duration in minutes (e.g., 5, 10, 30): ").strip()
+                )
                 config["duration"] = f"{max_duration}m"
                 print(f"Auto-stop set to: {max_duration} minutes")
             except ValueError:
                 config["duration"] = "10m"  # Default to 10 minutes
                 print("Auto-stop set to: 10 minutes (default)")
-            
+
             # Set default values for display purposes (actual values set in browser)
             config["users"] = "Set in browser"
             config["spawn_rate"] = "Set in browser"
@@ -1208,7 +1214,7 @@ def build_command(config):
 
     # Add host
     cmd.extend(["--host", config["host"]])
-    
+
     # Add headless mode options
     if config["headless"]:
         cmd.append("--headless")
@@ -1227,14 +1233,14 @@ def build_command(config):
             cmd.extend(["-u", str(config["users"])])
         if isinstance(config["spawn_rate"], (int, float)) and config["spawn_rate"] > 0:
             cmd.extend(["-r", str(config["spawn_rate"])])
-        
+
         # IMPORTANT: Add duration even in interactive mode for auto-stop
         if "duration" in config and config["duration"]:
             cmd.extend(["-t", config["duration"]])
             print(f"Auto-stop duration set to: {config['duration']}")
         else:
             print("WARNING: No duration set - test will run indefinitely!")
-    
+
     # Add CSV output
     if "csv" in config:
         cmd.extend(
@@ -1244,7 +1250,7 @@ def build_command(config):
     # Add HTML report
     if "html" in config:
         cmd.extend(["--html", config["html"]])
-    
+
     # Add log level
     cmd.extend(["--loglevel", config["log_level"]])
 
@@ -1586,7 +1592,7 @@ def main():
         # Build command
         cmd = build_command(config)
         # Display summary
-        display_summary(config)        # Auto-confirm or ask
+        display_summary(config)  # Auto-confirm or ask
         if config["headless"]:
             print("\nStarting automatic test...")
             confirm = True

@@ -79,6 +79,7 @@ Ready-to-use scenarios for common testing needs:
 1. **Clone the repository:**
 
    ```bash
+   #make SURE you have python 3.8+ installed !
    git clone https://github.com/[YOUR-GITHUB-USERNAME]/LRGEX-Web-Benchmark.git
    cd LRGEX-Web-Benchmark
    ```

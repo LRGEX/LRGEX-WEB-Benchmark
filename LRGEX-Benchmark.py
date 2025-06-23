@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 
 # Version information
-VERSION = "v1.0.0"
+VERSION = "v1.0.1"
 
 # Pre-defined test templates - FIXED VERSION
 TEST_TEMPLATES = {

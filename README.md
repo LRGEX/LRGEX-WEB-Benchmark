@@ -9,6 +9,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-v1.0.1-blue.svg)](https://github.com/[YOUR-GITHUB-USERNAME]/LRGEX-Web-Benchmark)
 
+## ⚠️ Responsible Use
+
+This tool is intended for ethical, authorized load and performance testing only.
+
+**Do not use it to test or attack systems you do not own or have explicit permission to test.**
+
+Unauthorized use is illegal and strictly prohibited. The authors and contributors of this project are not responsible for any misuse.
+
 ## What is LRGEX Web Benchmark?
 
 LRGEX Web Benchmark is **the first question-based load testing tool** that creates custom tests through interactive conversations - no coding experience required! Just answer simple questions about your website and get professional-grade performance testing results.
@@ -487,14 +495,17 @@ project-directory/
 ## Recent Changes (v1.0.1)
 
 ### ✨ New Features
+
 - Duration handling now supports both seconds and minutes (e.g., '15s', '1m') and always passes the correct value to Locust, preventing infinite test runs.
 - Improved safety for file edits and user manual changes.
 
 ### Improvements
+
 - Version badge updated to v1.0.1.
 - More robust handling of user input and test configuration.
 
 ### 🐛 Bug Fixes
+
 - Fixed bug where selecting a short duration (like '15s') resulted in a 0-minute infinite test.
 - Ensured all comments and code structure are preserved during edits.
 

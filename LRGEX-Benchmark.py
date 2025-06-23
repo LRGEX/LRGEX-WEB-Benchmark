@@ -862,13 +862,9 @@ class CustomFormUser(HttpUser):
                 }}
                   # Submit the form
                 with self.client.post("{form_info['submit_url']}", data=form_data, catch_response=True) as post_response:
-                    if post_response.status_code in [200, 201, 302]:
+                    if post_response.status_code in [200, 201, 302, 422]:     
                         post_response.success()
                         # print(f"Form submitted successfully! Response: {{post_response.status_code}}") # Suppressed for brevity during load
-                    elif post_response.status_code == 422:
-                        # Validation error but form was processed
-                        post_response.success()
-                        # print(f"Form submitted with validation warnings: {{post_response.status_code}}") # Suppressed for brevity during load
                     else:
                         post_response.failure(f"Form submission failed: {{post_response.status_code}}")
                         print(f"Form submission failed: {{post_response.status_code}}") # Keep this for critical errors

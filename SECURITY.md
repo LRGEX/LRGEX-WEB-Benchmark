@@ -1,5 +1,13 @@
 # Security Policy
 
+## ⚠️ Responsible Use
+
+This tool is intended for ethical, authorized load and performance testing only.
+
+**Do not use it to test or attack systems you do not own or have explicit permission to test.**
+
+Unauthorized use is illegal and strictly prohibited. The authors and contributors of this project are not responsible for any misuse.
+
 ## Supported Versions
 
 We actively support and provide security updates for the following versions of LRGEX Web Benchmark:

@@ -7,7 +7,7 @@
 </div>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)](https://github.com/[YOUR-GITHUB-USERNAME]/LRGEX-Web-Benchmark)
+[![Version](https://img.shields.io/badge/version-v1.0.1-blue.svg)](https://github.com/[YOUR-GITHUB-USERNAME]/LRGEX-Web-Benchmark)
 
 ## What is LRGEX Web Benchmark?
 
@@ -483,6 +483,20 @@ project-directory/
     ├── results.html           # HTML performance report
     └── results.csv            # Raw data for analysis
 ```
+
+## Recent Changes (v1.0.1)
+
+### ✨ New Features
+- Duration handling now supports both seconds and minutes (e.g., '15s', '1m') and always passes the correct value to Locust, preventing infinite test runs.
+- Improved safety for file edits and user manual changes.
+
+### Improvements
+- Version badge updated to v1.0.1.
+- More robust handling of user input and test configuration.
+
+### 🐛 Bug Fixes
+- Fixed bug where selecting a short duration (like '15s') resulted in a 0-minute infinite test.
+- Ensured all comments and code structure are preserved during edits.
 
 ## Recent Changes (v1.0.0)
 

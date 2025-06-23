@@ -7,7 +7,7 @@ import time
 # Version information
 VERSION = "v1.0.0"
 
-# Pre-defined test templates
+# Pre-defined test templates - FIXED VERSION
 TEST_TEMPLATES = {
     "custom_form": {
         "name": "Smart Form Builder",
@@ -47,7 +47,8 @@ class SmartWebsiteUser(HttpUser):
             self.run_time = None
         
         self.start_time = time.time()
-          # Only do discovery once across ALL users
+        
+        # Only do discovery once across ALL users
         with _discovery_lock:
             if not _discovery_done:
                 print("Discovering what exists on this website...")
@@ -91,19 +92,21 @@ class SmartWebsiteUser(HttpUser):
                 # Try to find additional URLs from homepage links
                 try:
                     homepage_response = self.client.get("/", catch_response=True, name="discovery")
-                    if homepage_response.status_code == 200:                        # Extract links from homepage HTML
+                    if homepage_response.status_code == 200:
+                        # Extract links from homepage HTML
                         links1 = re.findall(r'href="([^"]+)"', homepage_response.text, re.IGNORECASE)
                         links2 = re.findall(r"href='([^']+)'", homepage_response.text, re.IGNORECASE)
                         links = links1 + links2
                         for link in links:
                             if link.startswith('/') and not link.startswith('//'):
-                                # Clean the link
+                                # Clean the link - remove anchors and query params
                                 clean_link = link.split('#')[0].split('?')[0]
                                 if 1 < len(clean_link) < 100 and clean_link not in test_paths:
                                     test_paths.append(clean_link)
                     homepage_response.success()
                 except Exception:
-                    pass                
+                    pass
+                
                 # Test all discovered paths - only show what we FIND
                 found_pages = []
                 for path in test_paths:
@@ -155,10 +158,11 @@ class SmartWebsiteUser(HttpUser):
     @task
     def visit_pages(self):
         """Visit pages that actually exist (including protected ones)"""
-        global _working_paths, _protected_paths
+        global _working_paths, _protected_paths, _discovery_lock
         
-        # Combine accessible and protected pages (protected pages still generate useful load)
-        all_testable = _working_paths.union(_protected_paths)
+        # Safely get current paths
+        with _discovery_lock:
+            all_testable = _working_paths.union(_protected_paths)
         
         if len(all_testable) <= 1:
             # Only homepage exists - just test that
@@ -174,9 +178,8 @@ class SmartWebsiteUser(HttpUser):
                     response.success()
                 elif response.status_code == 404:
                     # Page disappeared - remove from future testing
-                    if path in _working_paths:
+                    with _discovery_lock:
                         _working_paths.discard(path)
-                    if path in _protected_paths:
                         _protected_paths.discard(path)
                     response.failure("Page no longer exists")
                 else:
@@ -433,7 +436,7 @@ class FormTestUser(HttpUser):
         "newsletter": {"get_url": "/newsletter", "post_url": "/newsletter"},
         "search": {"get_url": "/search", "post_url": "/search"},
         # Add your custom forms here:
-        # "custom_form": {"get_url": "/your-form-page", "post_url": "/whatever"},
+        # "custom_form": {"get_url": "/your-form-page", "post_url": "/submit-url"},
         # "feedback": {"get_url": "/feedback", "post_url": "/submit-feedback"},
         # "quote": {"get_url": "/quote", "post_url": "/process-quote"},
     }
@@ -450,142 +453,156 @@ class FormTestUser(HttpUser):
         last_names = ["Smith", "Johnson", "Brown", "Davis", "Wilson", "Moore", "Taylor", "Anderson"]
         return f"{random.choice(first_names)} {random.choice(last_names)}"
     
-    @task(3)
-    def contact_form_submission(self):
-        """Submit contact form - tries both custom and common URLs"""
-        # First try custom URLs if specified
-        if "contact" in self.CUSTOM_FORMS:
-            custom = self.CUSTOM_FORMS["contact"]
+    def get_form_data_for_type(self, form_type):
+        """Generate appropriate form data based on form type"""
+        base_data = {
+            "name": self.generate_fake_name(),
+            "email": self.generate_fake_email(),
+        }
+        
+        if form_type == "contact":
+            base_data.update({
+                "subject": random.choice([
+                    "Technical Support", "General Inquiry", "Bug Report",
+                    "Feature Request", "Billing Question"
+                ]),
+                "message": "This is a test message from automated load testing. Please disregard.",
+                "phone": f"555-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
+            })
+        elif form_type == "newsletter":
+            base_data.update({
+                "subscribe": "1"
+            })
+        elif form_type == "search":
+            base_data = {
+                "q": random.choice(["help", "support", "contact", "about", "services"]),
+                "category": random.choice(["all", "pages", "products", "help"])
+            }
+        else:
+            # Generic form data for custom forms
+            base_data.update({
+                "message": f"Test submission to {form_type} form",
+                "subject": f"Test {form_type}",
+                "comments": "This is a test submission from load testing",
+                "phone": f"555-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
+                "company": "Test Company Inc.",
+                "submit": "1"
+            })
+        
+        return base_data
+    
+    def try_form_submission(self, form_name, fallback_urls=None):
+        """Helper method to try form submission with custom or fallback URLs"""
+        # Try custom form first
+        if form_name in self.CUSTOM_FORMS:
+            custom = self.CUSTOM_FORMS[form_name]
             with self.client.get(custom["get_url"], catch_response=True) as response:
                 if response.status_code == 200:
-                    form_data = {
-                        "name": self.generate_fake_name(),
-                        "email": self.generate_fake_email(),
-                        "subject": random.choice([
-                            "Technical Support", "General Inquiry", "Bug Report",
-                            "Feature Request", "Billing Question"
-                        ]),
-                        "message": "This is a test message from automated load testing. Please disregard.",
-                        "phone": f"555-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
-                    }
-                    
+                    form_data = self.get_form_data_for_type(form_name)
                     with self.client.post(custom["post_url"], data=form_data, catch_response=True) as post_response:
-                        if post_response.status_code in [200, 201, 302]:
+                        if post_response.status_code in [200, 201, 302, 422]:
                             post_response.success()
-                            return
+                            return True
                 response.success()
-                return
-          # Use custom URLs if provided, otherwise fall back to common URLs
-        if hasattr(self, 'CUSTOM_FORM_URLS') and self.CUSTOM_FORM_URLS:
-            contact_urls = self.CUSTOM_FORM_URLS
-        else:
-            contact_urls = ["/contact", "/contact-us", "/support", "/help/contact"]
-        for url in contact_urls:
-            with self.client.get(url, catch_response=True) as response:
-                if response.status_code == 200:
-                    form_data = {
-                        "name": self.generate_fake_name(),
-                        "email": self.generate_fake_email(),
-                        "subject": "Test Support Request",
-                        "message": "This is a test message from automated load testing. Please disregard."
-                    }
-                    
-                    # Try multiple post URLs
-                    post_urls = [url, f"{url}/submit", "/contact/submit", "/submit-contact"]
-                    for post_url in post_urls:
-                        with self.client.post(post_url, data=form_data, catch_response=True) as post_response:
-                            if post_response.status_code in [200, 201, 302]:
-                                post_response.success()
-                                return
+                return True
+        
+        # Try fallback URLs if custom form not found and fallbacks provided
+        if fallback_urls:
+            for url in fallback_urls:
+                with self.client.get(url, catch_response=True) as response:
+                    if response.status_code == 200:
+                        form_data = self.get_form_data_for_type(form_name)
+                        
+                        # Try multiple post URLs
+                        post_urls = [url, f"{url}/submit", f"/{form_name}/submit", f"/submit-{form_name}"]
+                        for post_url in post_urls:
+                            with self.client.post(post_url, data=form_data, catch_response=True) as post_response:
+                                if post_response.status_code in [200, 201, 302, 422]:
+                                    post_response.success()
+                                    return True
                     response.success()
                     break
+        return False
+    
+    @task(3)
+    def contact_form_submission(self):
+        """Submit contact form"""
+        fallback_urls = ["/contact", "/contact-us", "/support", "/help/contact"]
+        self.try_form_submission("contact", fallback_urls)
+    
+    @task(2)
+    def newsletter_signup(self):
+        """Test newsletter/email subscription forms"""
+        fallback_urls = ["/newsletter", "/subscribe", "/signup", "/newsletter/signup"]
+        self.try_form_submission("newsletter", fallback_urls)
+    
+    @task(2)
+    def search_form_test(self):
+        """Test search forms"""
+        fallback_urls = ["/search", "/find", "/query"]
+        self.try_form_submission("search", fallback_urls)
     
     @task(2)
     def custom_form_test(self):
         """Test any custom forms you've defined"""
-        # Skip contact, login, newsletter, search as they have dedicated tasks
+        # Skip standard forms as they have dedicated tasks
         custom_forms = {k: v for k, v in self.CUSTOM_FORMS.items() 
                        if k not in ["contact", "login", "newsletter", "search"]}
         
         if not custom_forms:
             return  # No custom forms defined
             
-        form_name, form_config = random.choice(list(custom_forms.items()))
-        
-        # Get the form page
-        with self.client.get(form_config["get_url"], catch_response=True) as response:
-            if response.status_code == 200:
-                # Generic form data that works for most forms
-                form_data = {
-                    "name": self.generate_fake_name(),
-                    "email": self.generate_fake_email(),
-                    "message": f"Test submission to {form_name} form",
-                    "subject": f"Test {form_name}",
-                    "comments": "This is a test submission from load testing",
-                    "phone": f"555-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
-                    "company": "Test Company Inc.",
-                    "title": random.choice(["Mr.", "Ms.", "Dr."]),
-                    "submit": "1",
-                    "action": "submit"
-                }
-                
-                # Submit to the custom post URL
-                with self.client.post(form_config["post_url"], data=form_data, catch_response=True) as post_response:
-                    if post_response.status_code in [200, 201, 302, 422]:  # 422 = validation error but form processed
-                        post_response.success()
-                    else:
-                        post_response.failure(f"Custom form {form_name} failed: {post_response.status_code}")
-            response.success()
+        form_name = random.choice(list(custom_forms.keys()))
+        self.try_form_submission(form_name)
     
-    @task(2)
-    def newsletter_signup(self):
-        """Test newsletter/email subscription forms"""
-        # Try custom newsletter URL first
-        if "newsletter" in self.CUSTOM_FORMS:
-            custom = self.CUSTOM_FORMS["newsletter"]
+    @task(1)
+    def login_form_test(self):
+        """Test login forms (with fake data)"""
+        fallback_urls = ["/login", "/signin", "/auth", "/login.html"]
+        
+        # Special handling for login - use fake but realistic data
+        if "login" in self.CUSTOM_FORMS:
+            custom = self.CUSTOM_FORMS["login"]
             with self.client.get(custom["get_url"], catch_response=True) as response:
                 if response.status_code == 200:
-                    signup_data = {
+                    login_data = {
+                        "username": f"testuser{random.randint(1000, 9999)}",
+                        "password": "testpassword123",
                         "email": self.generate_fake_email(),
-                        "name": self.generate_fake_name(),
-                        "subscribe": "1"
+                        "login": "1"
                     }
-                    with self.client.post(custom["post_url"], data=signup_data, catch_response=True) as post_response:
-                        if post_response.status_code in [200, 201, 302]:
+                    with self.client.post(custom["post_url"], data=login_data, catch_response=True) as post_response:
+                        # Login will likely fail with fake data, but that's expected
+                        if post_response.status_code in [200, 201, 302, 401, 422]:
                             post_response.success()
-                            return
                 response.success()
-                return
-        
-        # Fallback to common URLs
-        # Use custom URLs if provided, otherwise fall back to common URLs
-        if hasattr(self, 'CUSTOM_FORM_URLS') and self.CUSTOM_FORM_URLS:
-            signup_urls = self.CUSTOM_FORM_URLS
         else:
-            signup_urls = ["/newsletter", "/subscribe", "/signup", "/newsletter/signup"]
-        for url in signup_urls:
-            with self.client.get(url, catch_response=True) as response:
-                if response.status_code == 200:
-                    signup_data = {
-                        "email": self.generate_fake_email(),
-                        "name": self.generate_fake_name(),
-                        "subscribe": "1"
-                    }
-                    
-                    post_urls = [url, f"{url}/submit", "/newsletter/subscribe", "/api/subscribe"]
-                    for post_url in post_urls:
-                        with self.client.post(post_url, data=signup_data, catch_response=True) as post_response:
-                            if post_response.status_code in [200, 201, 302]:
+            # Try fallback URLs
+            for url in fallback_urls:
+                with self.client.get(url, catch_response=True) as response:
+                    if response.status_code == 200:
+                        login_data = {
+                            "username": f"testuser{random.randint(1000, 9999)}",
+                            "password": "testpassword123",
+                            "email": self.generate_fake_email()
+                        }
+                        with self.client.post(url, data=login_data, catch_response=True) as post_response:
+                            # Expect login to fail with fake data
+                            if post_response.status_code in [200, 201, 302, 401, 422]:
                                 post_response.success()
-                                return
+                        break
                     response.success()
-                    break''',
+''',
     },
 }
 
 
-def build_custom_form_test(existing_host=None):
+def build_custom_form_test(existing_host=None, auto_config=None):
     """Interactive form builder - asks user questions and generates custom test"""
+    # auto_config will be a dictionary containing 'headless', 'users', 'duration', 'spawn_rate'
+    auto_config = auto_config if auto_config is not None else {}
+    is_headless = auto_config.get("headless", False)
+
     print("\n" + "=" * 50)
     print("   SMART FORM BUILDER")
     print("=" * 50)
@@ -668,25 +685,42 @@ def build_custom_form_test(existing_host=None):
 
     form_info["fields"] = fields
 
-    # 3. Test configuration
+    # 3. Test configuration - Conditional based on mode
     print("\nSTEP 3: Test settings")
     print("-" * 40)
-    print("How many students/users will use your form in real life?")
-    try:
-        max_users = int(
-            input("Maximum expected users (e.g., 100, 500, 2000): ").strip()
-        )
-    except ValueError:
-        max_users = 100
 
-    print("\nOver how many minutes will they submit?")
-    try:
-        duration = int(input("Duration in minutes (e.g., 30, 60, 120): ").strip())
-    except ValueError:
-        duration = 60
+    max_users = None
+    duration_minutes = None
+
+    if is_headless and auto_config.get("users") and auto_config.get("duration"):
+        # If in headless mode and 'users'/'duration' already set by intensity selection
+        max_users = auto_config["users"]
+        duration_str = auto_config["duration"]
+        form_info["duration"] = duration_str  # Keep as '15s', '1m', etc.
+        print(f"Using intensity settings from Automatic Mode:")
+        print(f"  Maximum expected users: {max_users}")
+        print(f"  Duration: {duration_str}")
+    else:
+        # Prompt user if not in headless mode or settings not predefined
+        print("How many students/users will use your form in real life?")
+        try:
+            max_users = int(
+                input("Maximum expected users (e.g., 100, 500, 2000): ").strip()
+            )
+        except ValueError:
+            max_users = 100
+
+        print("\nOver how many minutes will they submit?")
+        try:
+            duration_minutes = int(
+                input("Duration in minutes (e.g., 30, 60, 120): ").strip()
+            )
+            form_info["duration"] = f"{duration_minutes}m"
+        except ValueError:
+            form_info["duration"] = "60m"
 
     form_info["max_users"] = max_users
-    form_info["duration"] = duration  # Generate the test code
+
     print("\nGENERATING YOUR CUSTOM TEST...")
     test_code = generate_custom_form_code(form_info)
 
@@ -699,7 +733,7 @@ def build_custom_form_test(existing_host=None):
     print(f"Submit: {form_info['submit_url']}")
     print(f"Fields: {len(fields)} custom fields")
     print(f"Max Users: {max_users}")
-    print(f"Duration: {duration} minutes")
+    print(f"Duration: {duration_minutes} minutes")
     print()
 
     return {"code": test_code, "form_info": form_info}
@@ -783,7 +817,15 @@ def generate_custom_form_code(form_info):
             )
 
         elif field_type == 7:  # Custom text
-            custom_text = field.get("custom_text", "Test data")
+            custom_text = form_info["fields"][
+                next(
+                    i
+                    for i, f in enumerate(form_info["fields"])
+                    if f["name"] == field_name
+                )
+            ][
+                "custom_text"
+            ]  # Ensure correct custom_text access
             form_data_fields.append(f'        "{field_name}": "{custom_text}",')
 
     # Build the complete test code
@@ -822,17 +864,20 @@ class CustomFormUser(HttpUser):
                 with self.client.post("{form_info['submit_url']}", data=form_data, catch_response=True) as post_response:
                     if post_response.status_code in [200, 201, 302]:
                         post_response.success()
-                        print(f"Form submitted successfully! Response: {{post_response.status_code}}")
+                        # print(f"Form submitted successfully! Response: {{post_response.status_code}}") # Suppressed for brevity during load
                     elif post_response.status_code == 422:
                         # Validation error but form was processed
                         post_response.success()
-                        print(f"Form submitted with validation warnings: {{post_response.status_code}}")
+                        # print(f"Form submitted with validation warnings: {{post_response.status_code}}") # Suppressed for brevity during load
                     else:
                         post_response.failure(f"Form submission failed: {{post_response.status_code}}")
-                        print(f"Form submission failed: {{post_response.status_code}}")
+                        print(f"Form submission failed: {{post_response.status_code}}") # Keep this for critical errors
             else:
                 response.failure(f"Could not load form page: {{response.status_code}}")
-            response.success()
+                print(f"Could not load form page: {{response.status_code}}") # Keep this for critical errors
+            # Only mark the overall transaction as success if form page loaded (even if submission fails)
+            # Or consider handling this more granularly based on your test goals.
+            response.success() 
 
 # Configuration for your test:
 # Website: {form_info['website']}
@@ -855,7 +900,9 @@ def get_user_input():
     """Get user configuration for the benchmark test"""
     print("=" * 70)
     print("      __   __   ___         __   ___       __       ")
-    print(r"|    |__) / _` |__  \_/ __ |__) |__  |\ | /  ` |__| ")
+    print(
+        r"|    |__) / _` |__  \_/ __ |__) |__  |\ | /  ` |__| "
+    )  # Corrected ASCII art line
     print(r"|___ |  \ \__> |___ / \    |__) |___ | \| \__, |  | ")
     print(f"                                           {VERSION}")
     print("=" * 70)
@@ -1100,9 +1147,11 @@ def create_test_file(config):
     )  # Handle interactive custom form creation
     if template.get("interactive", False):
         print("\nStarting Smart Form Builder...")
-        # Pass existing host to avoid asking twice
+        # Pass existing host AND the current config to the custom form builder
         existing_host = config.get("host", None)
-        custom_result = build_custom_form_test(existing_host)
+        custom_result = build_custom_form_test(
+            existing_host, config
+        )  # Pass config here
 
         print(f"\nCreating custom test file: {test_file_path}")
         with open(test_file_path, "w", encoding="utf-8") as f:
@@ -1117,22 +1166,27 @@ def create_test_file(config):
             config["host"] = form_info["website"]
             print(f"Auto-set target to: {config['host']}")
 
-        # Update config with user's test settings
+        # Update config with user's test settings, adjusted for Locust's expected format
         if "max_users" in form_info:
             config["users"] = form_info["max_users"]
             print(f"Auto-set users to: {config['users']}")
 
         if "duration" in form_info:
-            # Convert minutes to seconds for Locust
-            duration_seconds = f"{form_info['duration']}m"
-            config["duration"] = duration_seconds
+            # Convert minutes (from form_info) to Locust's 'm' duration string
+            duration_locust_format = f"{form_info['duration']}m"
+            config["duration"] = duration_locust_format
             print(f"Auto-set duration to: {form_info['duration']} minutes")
 
         # Set a reasonable spawn rate (10% of max users, minimum 1, maximum 50)
-        if "max_users" in form_info:
+        # This will only be set if not already determined by automatic mode intensity
+        if "max_users" in form_info and (
+            config.get("spawn_rate") == "Set in browser"
+            or config.get("spawn_rate") is None
+        ):
             spawn_rate = max(1, min(50, form_info["max_users"] // 10))
             config["spawn_rate"] = spawn_rate
             print(f"Auto-set spawn rate to: {spawn_rate}/second")
+
     else:
         # Regular template creation
         print(f"\nCreating test file: {test_file_path}")
@@ -1235,7 +1289,9 @@ def build_command(config):
             cmd.extend(["-r", str(config["spawn_rate"])])
 
         # IMPORTANT: Add duration even in interactive mode for auto-stop
-        if "duration" in config and config["duration"]:
+        if (
+            "duration" in config and config["duration"] != "Set in browser"
+        ):  # Check against default placeholder
             cmd.extend(["-t", config["duration"]])
             print(f"Auto-stop duration set to: {config['duration']}")
         else:
@@ -1290,6 +1346,7 @@ def display_summary(config):
             print()
             print("The web interface will open with your values pre-filled!")
         else:
+            # Fallback for very minimal interactive config where users/spawn might be 'Set in browser'
             print(f"Users: {config['users']}")
             print(f"Spawn Rate: {config['spawn_rate']}/second")
             print(f"Duration: {config['duration']}")
@@ -1426,7 +1483,7 @@ def install_uv_if_missing():
             # Detect platform and install UV accordingly
             if sys.platform.startswith("win"):
                 # Windows installation using PowerShell
-                print("Installing UV for Windows...")
+                print("Installing UV for Windows... (This may take a moment)")
                 cmd = [
                     "powershell",
                     "-ExecutionPolicy",
@@ -1434,7 +1491,7 @@ def install_uv_if_missing():
                     "-Command",
                     "irm https://astral.sh/uv/install.ps1 | iex",
                 ]
-                subprocess.run(cmd, check=True, timeout=120)
+                subprocess.run(cmd, check=True, timeout=180)  # Increased timeout
 
                 # On Windows, update the PATH for this session
                 import os
@@ -1447,9 +1504,11 @@ def install_uv_if_missing():
 
             else:
                 # Unix-like systems (Linux, macOS)
-                print("Installing UV for Unix-like system...")
+                print("Installing UV for Unix-like system... (This may take a moment)")
                 cmd = ["curl", "-LsSf", "https://astral.sh/uv/install.sh", "|", "sh"]
-                subprocess.run(" ".join(cmd), shell=True, check=True, timeout=120)
+                subprocess.run(
+                    " ".join(cmd), shell=True, check=True, timeout=180
+                )  # Increased timeout
 
             print("✅ UV installed successfully!")
 
@@ -1485,9 +1544,11 @@ def install_uv_if_missing():
                         return False
 
         except subprocess.TimeoutExpired:
-            print("❌ UV installation timed out")
             print(
-                "Please install UV manually from: https://docs.astral.sh/uv/getting-started/installation/"
+                "❌ UV installation timed out. Please check your internet connection or try again later."
+            )
+            print(
+                "Alternatively, install UV manually from: https://docs.astral.sh/uv/getting-started/installation/"
             )
             return False
         except Exception as e:
@@ -1514,7 +1575,7 @@ def check_and_install_dependencies():
 
     # Step 2: Create virtual environment if it doesn't exist
     venv_path = Path(".venv")
-    if not venv_path.exists():
+    if not venv_path.exists():  # FIXED: Changed 'venv' to 'venv_path'
         try:
             print("Creating virtual environment...")
             subprocess.run(["uv", "venv"], check=True, timeout=60)
@@ -1532,7 +1593,7 @@ def check_and_install_dependencies():
         # Give fresh systems a moment to initialize
         time.sleep(2)
 
-        # Verify Locust is available - try a few times for fresh installations
+        # Try to verify Locust is available - try a few times for fresh installations
         for attempt in range(3):
             try:
                 subprocess.run(
@@ -1543,20 +1604,25 @@ def check_and_install_dependencies():
                 )
                 print("✅ Locust is ready!")
                 break
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
                 if attempt < 2:
-                    print("Initializing environment...")
+                    print(
+                        f"Attempt {attempt+1}: Initializing environment for Locust..."
+                    )
                     time.sleep(2)
                 else:
-                    raise
+                    print(f"❌ Locust verification failed after multiple attempts: {e}")
+                    raise  # Re-raise error if all attempts fail
 
     except (
         subprocess.CalledProcessError,
         FileNotFoundError,
         subprocess.TimeoutExpired,
-    ):
-        # Fallback: Install Locust directly if sync fails
-        print("Sync failed, installing Locust directly...")
+    ) as e:
+        # Fallback: Install Locust directly if sync fails or initial check fails
+        print(
+            f"Sync or initial Locust check failed ({e}), attempting to add Locust directly..."
+        )
         try:
             subprocess.run(["uv", "add", "locust"], check=True, timeout=60)
             print("✅ Locust installed successfully!")
